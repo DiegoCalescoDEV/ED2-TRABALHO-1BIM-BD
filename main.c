@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <conio2.h>
 
+#include "TADAuxiliares.h"
 #include "TADPDados.h"
 #include "TADPCampos.h"
 #include "TADPTabelas.h"
@@ -21,24 +22,8 @@ int main()
 	else
 		lerScript(Ptr, &bd);
 
-	// BancoDados aux = bd;
-	// PTabelas *auxt = bd.ptabela;
-	// PCampos *auxp;
-	// printf("DB %s\n", aux.nome);
-
-	// while(auxt != NULL)
-	// {
-	// 	auxp = auxt->pcampo;
-	// 	printf("\tTABELA %s\n", auxt->tabela);
-	// 	while(auxp != NULL)
-	// 	{
-	// 		printf("\t\t%s %c %c\n", auxp->campo, auxp->tipo, auxp->pk);
-	// 		auxp = auxp->prox;
-	// 	}
-	// 	printf("\n");
-	// 	auxt = auxt->prox;
-	// }
+	show_database(bd);
+	show_estrutura(bd);
 
 	return 0;	
 };
-

@@ -1,7 +1,7 @@
 struct banco_dados
 {
     char nome[20];
-    struct PTabelas *ptabela;
+    struct ptabelas *ptabela;
 };
 typedef struct banco_dados BancoDados;
 
@@ -50,6 +50,42 @@ PCampos *BuscaCampo(PTabelas *tabela, char nomeCampo[50])
     return campo;
 }
 
+void show_database(BancoDados bd)
+{
+    PTabelas *auxt = bd.ptabela;
+    PCampos *auxp;
+
+    printf("BANCO DE DADOS: %s\n\n", bd.nome);
+
+    while (auxt != NULL)
+    {
+        auxp = auxt->pcampo;
+
+        printf("TABELA: %s\n", auxt->tabela);
+        printf("---------------------------------------------\n");
+        printf("%-20s %-6s %-6s %-15s\n", "CAMPO", "TIPO", "PK", "FK");
+        printf("---------------------------------------------\n");
+
+        while (auxp != NULL)
+        {
+            printf("%-20s %-6c %-6c ", auxp->campo, auxp->tipo, auxp->pk);
+
+            if (auxp->fk != NULL)
+                printf("%-15s", auxp->fk->campo);
+            else
+                printf("%-15s", "-");
+
+            printf("\n");
+
+            auxp = auxp->prox;
+        }
+
+        printf("---------------------------------------------\n\n");
+
+        auxt = auxt->prox;
+    }
+}
+
 void create_database(char linha[], BancoDados *bd)
 {
     int i = 16;
@@ -71,88 +107,39 @@ void create_database(char linha[], BancoDados *bd)
 void alter_table(FILE *Ptr, char linha[], BancoDados *bd)
 {
     int i = 12;
-    int j = 0;
     char tabelaAlterada[20], tabelaReferenciada[20];
     char campoTabelaAlterada[50], campoTabelaReferenciada[50];
-
     PTabelas *tabelaAlt, *tabelaRef;
     PCampos *campoAlt, *campoRef;
-    while (linha[i] == ' ')
-        i++;
 
-    while (linha[i] != ' ')
-    {
-        tabelaAlterada[j] = linha[i];
-        i++;
-        j++;
-    }
-
-    tabelaAlterada[j] = '\0';
+    pega_palavra(linha, &i, tabelaAlterada);
 
     tabelaAlt = BuscaTabela(bd, tabelaAlterada);
 
     if (tabelaAlt != NULL)
     {
         fgets(linha, 300, Ptr);
+
         i = 0;
 
-        while (linha[i] != '(')
-            i++;
-
-        if (linha[i] == '(')
-            i++;
-
-        j = 0;
-
-        while (linha[i] != ')')
-        {
-            campoTabelaAlterada[j] = linha[i];
-            i++;
-            j++;
-        }
-
-        campoTabelaAlterada[j] = '\0';
+        pega_palavra_entre_parenteses(linha, &i, campoTabelaAlterada);
 
         campoAlt = BuscaCampo(tabelaAlt, campoTabelaAlterada);
 
         if (campoAlt != NULL)
         {
             i += 12;
-            j = 0;
 
-            while (linha[i] == ' ')
-                i++;
-
-            while (linha[i] != ' ')
-            {
-                tabelaReferenciada[j] = linha[i];
-                i++;
-                j++;
-            }
-
-            tabelaReferenciada[j] = '\0';
+            pega_palavra(linha, &i, tabelaReferenciada);
 
             tabelaRef = BuscaTabela(bd, tabelaReferenciada);
+
             if (tabelaRef != NULL)
             {
-                while (linha[i] != '(')
-                    i++;
-
-                if (linha[i] == '(')
-                    i++;
-
-                j = 0;
-
-                while (linha[i] != ')')
-                {
-                    campoTabelaReferenciada[j] = linha[i];
-                    i++;
-                    j++;
-                }
-
-                campoTabelaReferenciada[j] = '\0';
+                pega_palavra_entre_parenteses(linha, &i, campoTabelaReferenciada);
 
                 campoRef = BuscaCampo(tabelaRef, campoTabelaReferenciada);
+
                 if (campoRef != NULL)
                     campoAlt->fk = campoRef;
                 else
@@ -173,28 +160,18 @@ void create_table(FILE *Ptr, char linha[], BancoDados *bd)
     int i = 13;
     int j = 0;
     int k;
+    int p;
     char nomeTabela[20];
     char nomeCampo[50];
     char tipo[20];
+    char camposPK[100];
     char campoPK[50];
-
     PTabelas *novaTabela;
     PTabelas *auxTabela;
-
     PCampos *novoCampo;
     PCampos *auxCampo;
 
-    while (linha[i] == ' ')
-        i++;
-
-    while (linha[i] != '(' && linha[i] != ' ' && linha[i] != '\0')
-    {
-        nomeTabela[j] = linha[i];
-        i++;
-        j++;
-    }
-
-    nomeTabela[j] = '\0';
+    pega_palavra(linha, &i, nomeTabela);
 
     novaTabela = NovaTabela(nomeTabela);
 
@@ -214,42 +191,28 @@ void create_table(FILE *Ptr, char linha[], BancoDados *bd)
     while (fgets(linha, 300, Ptr) != NULL && (linha[0] != ')' || linha[1] != ';'))
     {
         i = 0;
-        j = 0;
 
-        while (linha[i] == ' ')
-            i++;
-
-        while (linha[i] != ' ')
-        {
-            nomeCampo[j] = linha[i];
-            j++;
-            i++;
-        }
-
-        nomeCampo[j] = '\0';
+        pega_palavra(linha, &i, nomeCampo);
 
         if (strcmp(nomeCampo, "CONSTRAINT") == 0)
         {
             i = 0;
 
-            while (linha[i] != '(' && linha[i] != '\0')
-                i++;
+            pega_palavra_entre_parenteses(linha, &i, camposPK);
 
-            if (linha[i] == '(')
-                i++;
+            p = 0;
 
-            while (linha[i] != ')' && linha[i] != '\0')
+            while (camposPK[p] != '\0')
             {
-                while (linha[i] == ' ')
-                    i++;
+                pula_espacos(camposPK, &p);
 
                 k = 0;
 
-                while (linha[i] != ',' && linha[i] != ')' && linha[i] != '\0')
+                while (camposPK[p] != ',' && camposPK[p] != '\0')
                 {
-                    campoPK[k] = linha[i];
+                    campoPK[k] = camposPK[p];
                     k++;
-                    i++;
+                    p++;
                 }
 
                 campoPK[k] = '\0';
@@ -261,14 +224,15 @@ void create_table(FILE *Ptr, char linha[], BancoDados *bd)
                 else
                     printf("ERRO: campo PK [%s] nao encontrado na tabela [%s]\n", campoPK, novaTabela->tabela);
 
-                if (linha[i] == ',')
-                    i++;
+                if (camposPK[p] == ',')
+                    p++;
             }
         }
         else
         {
             j = 0;
-            i++;
+
+            pula_espacos(linha, &i);
 
             while (linha[i] != ',' && linha[i] != ' ' && !(linha[i] == '(' && strcmp(tipo, "NUMERIC") == 0))
             {
