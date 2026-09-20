@@ -5,28 +5,41 @@ struct banco_dados
 };
 typedef struct banco_dados BancoDados;
 
-void create_database(char linha[], BancoDados *bd);
+void create_database(char linha[], BancoDados **bd);
 void create_table(FILE *Ptr, char linha[], BancoDados *bd);
 void alter_table(FILE *Ptr, char linha[], BancoDados *bd);
-void lerScript(FILE *Ptr, BancoDados *bd);
+void lerScript(char arquivo[20], BancoDados **bd);
 PTabelas *BuscaTabela(BancoDados *bd, char nomeTabela[20]);
 PCampos *BuscaCampo(PTabelas *tabela, char nomeCampo[50]);
 
-void lerScript(FILE *Ptr, BancoDados *bd)
+void lerScript(char arquivo[20], BancoDados **bd)
 {
     char linha[300];
+    FILE *Ptr = fopen(arquivo, "r");
 
-    while (!feof(Ptr))
+    if (Ptr == NULL)
     {
-        fgets(linha, 300, Ptr);
-        if (strncmp(linha, "CREATE DATABASE", 15) == 0)
-            create_database(linha, bd);
+        printf("\n[ERRO] Arquivo nao encontrado!\n");
+        getch();
+    }
+    else
+    {
+        while (!feof(Ptr))
+        {
+            fgets(linha, 300, Ptr);
+            if (strncmp(linha, "CREATE DATABASE", 15) == 0)
+                create_database(linha, bd);
 
-        else if (strncmp(linha, "CREATE TABLE", 12) == 0)
-            create_table(Ptr, linha, bd);
+            else if (strncmp(linha, "CREATE TABLE", 12) == 0)
+                create_table(Ptr, linha, *bd);
 
-        else if (strncmp(linha, "ALTER TABLE", 11) == 0)
-            alter_table(Ptr, linha, bd);
+            else if (strncmp(linha, "ALTER TABLE", 11) == 0)
+                alter_table(Ptr, linha, *bd);
+        }
+
+        fclose(Ptr);
+        printf("\n[OK] Script importado com sucesso!");
+        getch();
     }
 }
 
@@ -50,58 +63,69 @@ PCampos *BuscaCampo(PTabelas *tabela, char nomeCampo[50])
     return campo;
 }
 
-void show_database(BancoDados bd)
+void show_database(BancoDados *bd)
 {
-    PTabelas *auxt = bd.ptabela;
-    PCampos *auxp;
-
-    printf("BANCO DE DADOS: %s\n\n", bd.nome);
-
-    while (auxt != NULL)
+    clrscr();
+    printf("==== SHOW DATABASE ====\n\n");
+    if (bd == NULL)
+        printf("\n[ERRO] Nao existe nenhum banco de dados atualmente.\n");
+    else
     {
-        auxp = auxt->pcampo;
+        PTabelas *auxt = bd->ptabela;
+        PCampos *auxp;
 
-        printf("TABELA: %s\n", auxt->tabela);
-        printf("---------------------------------------------\n");
-        printf("%-20s %-6s %-6s %-15s\n", "CAMPO", "TIPO", "PK", "FK");
-        printf("---------------------------------------------\n");
+        printf("BANCO DE DADOS: %s\n\n", bd->nome);
 
-        while (auxp != NULL)
+        while (auxt != NULL)
         {
-            printf("%-20s %-6c %-6c ", auxp->campo, auxp->tipo, auxp->pk);
+            auxp = auxt->pcampo;
 
-            if (auxp->fk != NULL)
-                printf("%-15s", auxp->fk->campo);
-            else
-                printf("%-15s", "-");
+            printf("TABELA: %s\n", auxt->tabela);
+            printf("---------------------------------------------\n");
+            printf("%-20s %-6s %-6s %-15s\n", "CAMPO", "TIPO", "PK", "FK");
+            printf("---------------------------------------------\n");
 
-            printf("\n");
+            while (auxp != NULL)
+            {
+                printf("%-20s %-6c %-6c ", auxp->campo, auxp->tipo, auxp->pk);
 
-            auxp = auxp->prox;
+                if (auxp->fk != NULL)
+                    printf("%-15s", auxp->fk->campo);
+                else
+                    printf("%-15s", "-");
+
+                printf("\n");
+
+                auxp = auxp->prox;
+            }
+
+            printf("---------------------------------------------\n\n");
+
+            auxt = auxt->prox;
         }
-
-        printf("---------------------------------------------\n\n");
-
-        auxt = auxt->prox;
     }
 }
 
-void create_database(char linha[], BancoDados *bd)
+void create_database(char linha[], BancoDados **bd)
 {
     int i = 16;
     int j = 0;
+
+    *bd = (BancoDados *)malloc(sizeof(BancoDados));
+
+    (*bd)->ptabela = NULL;
 
     while (linha[i] == ' ')
         i++;
 
     while (linha[i] != ';' && linha[i] != '\0')
     {
-        bd->nome[j] = linha[i];
+        (*bd)->nome[j] = linha[i];
         i++;
         j++;
     }
 
-    bd->nome[j] = '\0';
+    (*bd)->nome[j] = '\0';
 }
 
 void alter_table(FILE *Ptr, char linha[], BancoDados *bd)
@@ -142,17 +166,30 @@ void alter_table(FILE *Ptr, char linha[], BancoDados *bd)
 
                 if (campoRef != NULL)
                     campoAlt->fk = campoRef;
+
                 else
-                    printf("ERRO Campo %s na tabela %s nao encontrado\n", campoTabelaReferenciada, tabelaReferenciada);
+                {
+                    printf("\n[ERRO] Campo %s na tabela %s nao encontrado\n", campoTabelaReferenciada, tabelaReferenciada);
+                    getch();
+                }
             }
             else
-                printf("ERRO Tabela %s nao encontrada\n", tabelaReferenciada);
+            {
+                printf("\n[ERRO] Tabela %s nao encontrada\n", tabelaReferenciada);
+                getch();
+            }
         }
         else
-            printf("ERRO Campo %s na tabela %s nao encontrado\n", campoTabelaAlterada, tabelaAlterada);
+        {
+            printf("\n[ERRO] Campo %s na tabela %s nao encontrado\n", campoTabelaAlterada, tabelaAlterada);
+            getch();
+        }
     }
     else
-        printf("ERRO Tabela %s nao encontrada\n", tabelaAlterada);
+    {
+        printf("\n[ERRO] Tabela %s nao encontrada\n", tabelaAlterada);
+        getch();
+    }
 }
 
 void create_table(FILE *Ptr, char linha[], BancoDados *bd)
@@ -222,7 +259,7 @@ void create_table(FILE *Ptr, char linha[], BancoDados *bd)
                 if (auxCampo != NULL)
                     auxCampo->pk = 'S';
                 else
-                    printf("ERRO: campo PK [%s] nao encontrado na tabela [%s]\n", campoPK, novaTabela->tabela);
+                    printf("[ERRO]: campo PK [%s] nao encontrado na tabela [%s]\n", campoPK, novaTabela->tabela);
 
                 if (camposPK[p] == ',')
                     p++;
