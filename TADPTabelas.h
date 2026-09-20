@@ -10,17 +10,9 @@ typedef struct ptabelas PTabelas;
 PTabelas* NovaTabela(char tabela[20])
 {
 	PTabelas *caixa = (PTabelas*)malloc(sizeof(PTabelas)); 	
-	caixa->ant = caixa->prox = caixa->pcampo = NULL;		
+	caixa->ant = NULL;	
+	caixa->prox = NULL;	
+	caixa->pcampo = NULL;		
 	strcpy(caixa->tabela, tabela); 							
 	return caixa;		 									
-}
-
-PTabelas *BuscaTabela(BancoDados *bd, char nomeTabela[20])
-{
-    PTabelas *tabela = bd->ptabela;
-
-    while (tabela != NULL && strcmp(tabela->tabela, nomeTabela) != 0)
-        tabela = tabela->prox;
-
-    return tabela;
 }
