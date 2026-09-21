@@ -12,11 +12,11 @@
 
 char menu()
 {
-	clrscr();
+	system("cls");
 	printf("==== MENU DE COMANDOS SQL ====\n\n");
 	printf("[A] Importar Sript SQL\n");
-	printf("[B] Show Database\n");
-	printf("[C] Executar comando SQL\n");
+	printf("[B] Executar comandos SQL\n");
+	printf("[C] Show Database\n");
 
 	printf("\n[ESC] Sair\n");
 
@@ -33,22 +33,58 @@ int main()
 		opcao = menu();
 		switch (opcao)
 		{
-			case 'A':
+		case 'A':
+			if (bd != NULL)
+			{
+				printf("\n[ERRO] Ja foi importado um script SQL.\n");
+				getch();
+			}
+			else
+			{
 				printf("\nDigite o arquivo script com a extensao: ");
 				fflush(stdin);
 				gets(nomeScript);
 				lerScript(nomeScript, &bd);
-				break;
-			case 'B':
-				show_database(bd);
+			}
+
+			break;
+		case 'B':
+			system("cls");
+			printf("==== PROMPT SQL ====\n\n\n");
+			if (bd == NULL)
+			{
+				printf("[ERRO] Nao existe nenhum banco de dados para executar comandos SQL.\n");
 				getch();
-				break;
-			
-			default:
-				break;
+			}
+			else
+			{
+				do
+				{
+					printf("SQL> ");
+					fflush(stdin);
+					gets(comandoSQL);
+					lerSQL(comandoSQL, bd);
+				} while (strcmp(comandoSQL, "exit") != 0);
+			}
+			break;
+		case 'C':
+			show_database(bd);
+			getch();
+
+			break;
+		case 'D':
+			show_dados(bd);
+			getch();
+			break;
+		case 27:
+			break;
+
+		default:
+			printf("\nERRO Comando invalido!\n");
+			getch();
+			break;
 		}
-	} while (opcao != 27);
+	} while (tolower(opcao) != 27);
 
-
-	return 0;	
+	return 0;
 };
